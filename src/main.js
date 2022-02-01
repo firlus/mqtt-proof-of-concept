@@ -1,19 +1,21 @@
+// Get HTML elements
 const chat = document.getElementById("chat");
 const button = document.getElementById("button");
 const message = document.getElementById("message");
 
+// If button is pressed, publish message and delete text from input field
 button.onclick = () => {
   client.publish("chat", `${localStorage.nickname}: ${message.value}`);
   message.value = "";
 };
 
-// If no no nickname is set, ask user to add one
-
+// Ask user for username
 checkUsername();
 
 // Connect to MQTT
 const clientId = "mqttjs_" + Math.random().toString(16).substr(2, 8);
 
+// MQTT options and authentification
 const options = {
   keepalive: 60,
   clientId: clientId,
@@ -32,30 +34,34 @@ const options = {
   },
 };
 
+// Connect to broker
 const client = mqtt.connect(
-  "ws://j0627971.eu-central-1.emqx.cloud:8083/mqtt",
+  "wss://j0627971.eu-central-1.emqx.cloud:8084/mqtt",
   options
 );
 
+// After connection, send join message
 client.on("connect", function () {
-  console.log("connected");
   client.subscribe("chat", function (err) {
     if (!err) {
-      client.publish("presence", "Hello mqtt");
+      client.publish("chat", `${localStorage.nickname} has joined`);
     }
   });
 });
 
+// If an error occurs, log the error and kill the client
 client.on("error", (err) => {
   console.log("Connection error: ", err);
   client.end();
 });
 
+// If a message arrives, add message to chat
 client.on("message", (topic, message) => {
   console.log(topic);
   chat.innerHTML = `${message}<br>${chat.innerHTML}`;
 });
 
+// Ask user for username
 function checkUsername() {
   if (localStorage.getItem("nickname") == null) {
     localStorage.setItem("nickname", prompt("Enter a nickname"));
